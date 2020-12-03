@@ -57,7 +57,7 @@ module seven_seg_wrapper #(
     // instantiate your module here, use clk, reset, project_in & project_out.
     seven_segment_seconds project (.clk(clk), .reset(reset), .led_out(project_out[14:8]), .compare_in(wbs_dat_i[23:0]), .update_compare(seven_seg_update));
     `endif
-    
+
 
     // wishbone
     wire wb_valid;
@@ -66,8 +66,12 @@ module seven_seg_wrapper #(
     reg wbs_ack;
     assign wbs_ack_o = wbs_ack;
     assign wbs_dat_o = wbs_data_out;
-    assign wb_valid = wbs_cyc_i && wbs_stb_i;
     assign wb_wstrb = wbs_sel_i & {4{wbs_we_i}};
+
+    // the last term is required to ensure `wbs_ack` is only high for 1 cycle
+    // TODO: this makes sby `cover` mode fail! why?
+    assign wb_valid = wbs_cyc_i && wbs_stb_i && !wbs_ack;
+
     always @(posedge clk) begin
         // reset
         if(wb_rst_i) begin
@@ -150,7 +154,7 @@ module seven_seg_wrapper #(
                 assume($stable(wbs_dat_i));
 
                 // wait for ack
-                if(!wbs_ack)
+                if($past(!wbs_ack))
                     assume(wb_valid);
             end
         end
@@ -165,6 +169,21 @@ module seven_seg_wrapper #(
                     assert(wbs_ack);
             end
         end
+
+        always @(*) begin
+            // Can't have ack outside a cycle
+            if (!wb_rst_i && !wb_valid)
+                assert(!wbs_ack);
+
+            // Data return lines must be 0 when not replying to a request
+            if (!wb_rst_i && !wbs_ack)
+                assert(wbs_data_out == 0);
+        end
+
+        // Demonstrate a WB transaction in sby `cover` mode
+        always @(posedge clk)
+           cover(!wb_rst_i && wbs_ack);
+
     `endif
 endmodule
 `default_nettype wire
