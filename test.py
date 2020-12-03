@@ -76,8 +76,8 @@ def get_oeb_value():
     for pin in range(38):
         if pin not in outputs:
             oeb_value += 1 << pin
-        
-    print(bin(oeb_value))  
+
+    print(bin(oeb_value))
     return oeb_value
 
 @cocotb.test()
@@ -104,7 +104,7 @@ async def test_project_0(dut):
     await wishbone_write(dut, ADDR_COMPARE, 10)
 
     # wait some cycles
-    await ClockCycles(dut.wb_clk_i, 10)
+    await ClockCycles(dut.wb_clk_i, 11)
     assert dut.project.digit == 1
     await ClockCycles(dut.wb_clk_i, 10)
     assert dut.project.digit == 2

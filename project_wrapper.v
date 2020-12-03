@@ -146,10 +146,16 @@ module seven_seg_wrapper #(
             if(wb_rst_i)
                 assume(!wbs_cyc_i);
             if(f_past_valid && $past(wb_valid)) begin
-                // keep address & data stable
+                // keep inputs stable during a cycle
                 assume($stable(wb_wstrb));
                 assume($stable(wbs_adr_i));
                 assume($stable(wbs_dat_i));
+                assume($stable(wbs_we_i));
+                assume($stable(wbs_sel_i));
+
+                // when no byte is selected for writing, wbs_we_i must be 0
+                if (wbs_sel_i == 0)
+                    assume(!wbs_we_i);
 
                 // wait for ack
                 if($past(!wbs_ack))
@@ -174,13 +180,19 @@ module seven_seg_wrapper #(
                 assert(!wbs_ack);
 
             // Data return lines must be 0 when not replying to a request
-            if (!wb_rst_i && !wbs_ack)
+            // ... or if it is a write request
+            if (!wb_rst_i && (!wbs_ack || wbs_we_i))
                 assert(wbs_data_out == 0);
+
+            // hopefully true for picorv, not generally true for wishbone!!!
+            assume(wbs_cyc_i == wbs_stb_i);
         end
 
         // Demonstrate a WB transaction in sby `cover` mode
         always @(posedge clk)
-           cover(!wb_rst_i && wbs_ack);
+        //    cover(!wb_rst_i && wbs_ack);
+            cover(!wb_rst_i && wbs_dat_o != 0);
+
 
     `endif
 endmodule

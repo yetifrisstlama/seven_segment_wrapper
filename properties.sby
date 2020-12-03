@@ -1,6 +1,7 @@
 [options]
-mode cover
+mode bmc
 depth 20
+append 2
 
 [engines]
 smtbmc yices
