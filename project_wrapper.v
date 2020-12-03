@@ -68,9 +68,7 @@ module seven_seg_wrapper #(
     assign wbs_dat_o = wbs_data_out;
     assign wb_wstrb = wbs_sel_i & {4{wbs_we_i}};
 
-    // the last term is required to ensure `wbs_ack` is only high for 1 cycle
-    // TODO: this makes sby `cover` mode fail! why?
-    assign wb_valid = wbs_cyc_i && wbs_stb_i && !wbs_ack;
+    assign wb_valid = wbs_cyc_i && wbs_stb_i;
 
     always @(posedge clk) begin
         // reset
@@ -81,7 +79,7 @@ module seven_seg_wrapper #(
             wb_reset <= 1; // start in reset
         end else
         // writes
-        if(wb_valid & (wb_wstrb > 0)) begin
+        if(wb_valid && !wbs_ack && (wb_wstrb > 0)) begin
             case(wbs_adr_i)
                 ADDR_BASE: begin
                     if (wb_wstrb[0])
@@ -96,7 +94,7 @@ module seven_seg_wrapper #(
 
         end else
         // reads - allow to see which is currently selected
-        if(wb_valid & wb_wstrb == 4'b0) begin
+        if(wb_valid && !wbs_ack && wb_wstrb == 4'b0) begin
             case(wbs_adr_i)
                 ADDR_BASE: begin
                     wbs_data_out[1:0] <= {wb_reset, active};
