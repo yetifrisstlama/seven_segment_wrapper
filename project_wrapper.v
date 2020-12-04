@@ -58,7 +58,6 @@ module seven_seg_wrapper #(
     seven_segment_seconds project (.clk(clk), .reset(reset), .led_out(project_out[14:8]), .compare_in(wbs_dat_i[23:0]), .update_compare(seven_seg_update));
     `endif
 
-
     // wishbone
     wire wb_valid;
     wire [3:0] wb_wstrb;
@@ -66,9 +65,8 @@ module seven_seg_wrapper #(
     reg wbs_ack;
     assign wbs_ack_o = wbs_ack;
     assign wbs_dat_o = wbs_data_out;
-    assign wb_wstrb = wbs_sel_i & {4{wbs_we_i}};
-
     assign wb_valid = wbs_cyc_i && wbs_stb_i;
+    assign wb_wstrb = wbs_sel_i & {4{wbs_we_i}};
 
     always @(posedge clk) begin
         // reset
@@ -192,8 +190,15 @@ module seven_seg_wrapper #(
         always @(posedge clk)
         //    cover(!wb_rst_i && wbs_ack);
             cover(!wb_rst_i && wbs_dat_o != 0);
-
-
     `endif
+
+    integer cc = 0;
+    always @(posedge clk) begin
+        if (wb_rst_i)
+            cc <= 0;
+        else
+            cc <= cc + 1;
+    end
+
 endmodule
 `default_nettype wire

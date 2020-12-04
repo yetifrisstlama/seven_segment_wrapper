@@ -1,7 +1,7 @@
 [options]
 mode bmc
 depth 20
-append 2
+# append 1
 
 [engines]
 smtbmc yices
