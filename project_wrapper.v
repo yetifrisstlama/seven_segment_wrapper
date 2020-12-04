@@ -161,15 +161,13 @@ module seven_seg_wrapper #(
             end
         end
 
-        // assert ack happens when writing to a known address
+        // only can have an ack on valid address
         always @(posedge clk) begin
-            if(f_past_valid && $past(wb_valid) && !$past(wb_rst_i)) begin
-                // reads & writes to project select address
-                if($past(wbs_adr_i == ADDR_BASE))
-                    assert(wbs_ack);
-                if($past(wbs_adr_i == ADDR_COMPARE))
-                    assert(wbs_ack);
-            end
+            if (!wb_rst_i && wbs_ack)
+                assert(
+                    $past(wbs_adr_i == ADDR_BASE) ||
+                    $past(wbs_adr_i == ADDR_COMPARE)
+                );
         end
 
         always @(*) begin
@@ -186,13 +184,14 @@ module seven_seg_wrapper #(
             assume(wbs_cyc_i == wbs_stb_i);
         end
 
-        // Demonstrate a WB transaction in sby `cover` mode
+        // Demonstrate a WB read transaction in sby `cover` mode
         always @(posedge clk)
         //    cover(!wb_rst_i && wbs_ack);
             cover(!wb_rst_i && wbs_dat_o != 0);
     `endif
 
-    integer cc = 0;
+    // interesting: without `keep` cc gets optimized away
+    (* keep *) integer cc;
     always @(posedge clk) begin
         if (wb_rst_i)
             cc <= 0;
